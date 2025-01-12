@@ -1,0 +1,17 @@
+{
+    "name": "pc00-control-service",
+    "version": "1.0.0",
+    "description": "WebSocket-based control service for managing game processes",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3",
+        "express": "^4.21.2",
+        "ws": "^8.18.0"
+    },
+    "author": "Your Name",
+    "license": "MIT"
+}

@@ -1,0 +1,470 @@
+@use "sass:color";
+
+// 变量定义
+$primary-color: #1890ff;
+$error-color: #ff4d4f;
+$success-color: #52c41a;
+$text-color: #333;
+$border-color: #f0f0f0;
+$bg-color: #fafafa;
+$hover-bg: rgba(24, 144, 255, 0.1);
+$error-hover-bg: rgba(255, 77, 79, 0.1);
+
+// 混合器
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin hover-transition {
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+// 主容器
+.data-source-config {
+  padding: 24px;
+  background: #fff;
+  border-radius: 4px;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  // 内容区域
+  .config-content {
+    min-height: calc(100vh - 180px);
+    padding-bottom: 80px;
+  }
+
+  // 空状态
+  .empty-state {
+    display: flex;
+    justify-content: flex-start;
+    padding: 20px 0;
+
+    .ant-btn {
+      height: 48px;
+      padding: 0 32px;
+      font-size: 16px;
+    }
+  }
+}
+
+// 组配置
+.group-config {
+  margin-bottom: 24px;
+  position: relative;
+  padding-top: 32px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid $border-color;
+  overflow: hidden;
+
+  // 组标题
+  .group-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin-bottom: 16px;
+  }
+
+  .group-title-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .timer {
+      margin-left: auto;
+      margin-right: 16px;
+    }
+  }
+
+  .group-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: $primary-color;
+    background-color: #fff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid $primary-color;
+  }
+
+  // 选择框行
+  .selection-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    margin-top: 24px;
+  }
+
+  // 选择列
+  .selection-column {
+    flex: 0 0 30%;
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    // 确保计时器在正确的位置
+    .timer-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    // 计时器样式调整
+    .timer {
+      font-size: 20px;
+      font-weight: bold;
+      color: $primary-color;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      animation: fadeIn 0.3s ease-in-out;
+      text-align: center;
+      min-width: 120px;
+      white-space: nowrap;
+
+      &.waiting {
+        color: #999;
+        animation: pulse 1.5s infinite;
+      }
+    }
+  }
+
+  // 选择下拉框
+  .selection-select {
+    width: 100% !important;
+    height: 48px !important;
+
+    .ant-select-selector {
+      height: 48px !important;
+      padding: 8px 12px !important;
+    }
+
+    .ant-select-selection-item {
+      line-height: 32px !important;
+      font-size: 16px !important;
+    }
+  }
+}
+
+// 配置区域
+.config-section {
+  margin-bottom: 16px;
+  background: $bg-color;
+  padding: 24px 16px 16px;
+  border-radius: 4px;
+  position: relative;
+  opacity: 0.7;
+
+  // PC状态
+  .pc-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+
+    .pc-name {
+      font-size: 14px;
+      color: $text-color;
+    }
+
+    .status-icon {
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+
+      &.error {
+        color: $error-color;
+      }
+
+      &.success {
+        color: $success-color;
+      }
+    }
+  }
+
+  // 玩家名称容器
+  .player-name-container {
+    @include flex-center;
+    margin: 12px 0;
+    gap: 8px;
+    position: relative;
+
+    .player-name-input {
+      width: 240px;
+      height: 48px;
+      font-size: 18px;
+      text-align: center !important;
+
+      input {
+        text-align: center;
+      }
+    }
+
+    // 主服务器图标
+    .main-server-icon {
+      font-size: 20px;
+      color: #999;
+      @include hover-transition;
+
+      &:hover {
+        color: $primary-color;
+      }
+
+      &.active {
+        color: $primary-color;
+      }
+    }
+  }
+
+  // 表单样式
+  .config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-left: 10px;
+
+    .ant-form-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      margin-bottom: 0;
+
+      &-label {
+        width: 100px;
+        text-align: left;
+        padding-right: 12px;
+      }
+
+      &-control-input {
+        width: 150px;
+      }
+    }
+
+    .ant-input,
+    .ant-select {
+      width: 180px;
+    }
+  }
+}
+
+// 底部按钮
+.bottom-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px;
+  background: #fff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  z-index: 1000;
+
+  .start-client-btn,
+  .start-timeline-btn {
+    background-color: $primary-color;
+    height: 48px;
+    padding: 0 32px;
+    font-size: 16px;
+    border-radius: 8px;
+    @include flex-center;
+    gap: 8px;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+// 删除按钮
+.delete-button {
+  color: $error-color;
+  padding: 0 4px;
+  height: 32px;
+  width: 32px;
+  font-size: 20px;
+
+  &:hover {
+    color: color.adjust($error-color, $lightness: 10%);
+    background: $error-hover-bg;
+  }
+}
+
+// 设备删除按钮
+.device-delete {
+  display: flex;
+  justify-content: flex-end;
+
+  &-btn {
+    color: $error-color;
+    font-size: 14px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    &:hover {
+      color: color.adjust($error-color, $lightness: 10%);
+      background: $error-hover-bg;
+    }
+
+    .anticon {
+      font-size: 14px;
+    }
+  }
+}
+
+// 下拉选项样式
+.pc-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+
+    .status-icon {
+      font-size: 14px;
+
+      &.success {
+        color: $success-color;
+      }
+
+      &.error {
+        color: $error-color;
+      }
+    }
+  }
+}
+
+// 确保下拉选项内容正确显示
+.ant-select-item-option-content {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+}
+
+// 选择框样式
+.selection-select {
+  .ant-select-selection-item {
+    .pc-option {
+      .status-indicator {
+        .status-icon {
+          &.error {
+            color: $error-color;
+          }
+          &.success {
+            color: $success-color;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 下拉菜单中的选项样式
+.ant-select-dropdown {
+  .ant-select-item-option {
+    .status-icon {
+      &.error {
+        color: $error-color;
+      }
+      &.success {
+        color: $success-color;
+      }
+    }
+  }
+}
+
+// 禁用状态
+.data-source-config.disabled {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+
+  // 所有输入和按钮禁用
+  .ant-input,
+  .ant-select,
+  .ant-btn {
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  // 主服务器图标禁用
+  .main-server-icon {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .selection-column {
+    .config-section,
+    .selection-select {
+      opacity: 0.7;
+      filter: blur(1px);
+    }
+  }
+}
+
+// 遮罩层
+.page-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  cursor: not-allowed;
+}
+
+// 计时器覆盖层
+.timer-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  pointer-events: none;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+// 添加脉冲动画
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.group-title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .timer {
+    margin-left: auto;
+    margin-right: 16px;
+  }
+} 
