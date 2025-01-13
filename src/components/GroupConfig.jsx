@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Select, Input, Form, Collapse, Button, Modal } from 'antd';
-import { SettingOutlined, DeleteOutlined, ExclamationCircleOutlined, CheckCircleOutlined, DownOutlined, CloudServerOutlined } from '@ant-design/icons';
-
+import { 
+  SettingOutlined, 
+  DeleteOutlined, 
+  CloudServerOutlined,
+  DatabaseOutlined,
+  LaptopOutlined
+} from '@ant-design/icons';
 const { Option } = Select;
 const { Panel } = Collapse;
 
@@ -10,18 +15,10 @@ const GroupConfig = ({
   onUpdate, 
   groupIndex, 
   onDelete,
-  timeElapsed,  // 现在是一个对象 { deviceIndex: time }
+  timeElapsed, 
   isRunning,
-  pcStatus,
-  ipMap // 新增 ipMap 属性
+  ipMap
 }) => {
-  // 添加调试日志
-  console.log('GroupConfig props:', {
-    ipMap,
-    pcStatus,
-    selections: group.selections,
-    group
-  });
 
   // 根据 ipMap 生成 PC 选项列表
   const ALL_PC_OPTIONS = Object.keys(ipMap || {});
@@ -150,11 +147,10 @@ const GroupConfig = ({
     return (
       <div className="pc-status">
         <span className="pc-name">{pc}状态</span>
-        {ipMap[pc].status === 1 ? (
-          <CheckCircleOutlined className="status-icon success" />
-        ) : (
-          <ExclamationCircleOutlined className="status-icon error" />
-        )}
+          <span className="d-flex">
+            {ipMap[pc].isServer === 1 ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
+            {ipMap[pc].isClient === 1 ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
+          </span>
       </div>
     );
   };
@@ -165,7 +161,10 @@ const GroupConfig = ({
       return (
         <Option key={pc} value={pc}>
           <div className="pc-option">
-            <ExclamationCircleOutlined className="status-icon error" />
+            <span className="d-flex">
+              {ipMap[pc].isServer === 1 ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
+              {ipMap[pc].isClient === 1 ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
+            </span>
             {pc}
           </div>
         </Option>
@@ -173,13 +172,12 @@ const GroupConfig = ({
     }
     
     return (
-      <Option key={pc} value={pc}>
+      <Option key={pc} value={pc} disabled={ipMap[pc].isServer === 1 || ipMap[pc].isClient === 1}>
         <div className="pc-option">
-          {ipMap[pc].status === 1 ? (
-            <CheckCircleOutlined className="status-icon success" />
-          ) : (
-            <ExclamationCircleOutlined className="status-icon error" />
-          )}
+          <span className="d-flex">
+            {ipMap[pc].isServer === 1 ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
+            {ipMap[pc].isClient === 1 ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
+          </span>
           {pc}
         </div>
       </Option>

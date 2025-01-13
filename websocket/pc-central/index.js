@@ -34,7 +34,7 @@ wss.on('connection', (ws, req) => {
         if (connections.has(ClientIP)) {
           const pc = connections.get(ClientIP);
           connections.set(ClientIP, { ...pc, isServer, isClient, status });
-          console.log(`State update from ${ClientIP}:`, { isServer, isClient, status });
+          //console.log(`State update from ${ClientIP}:`, { isServer, isClient, status });
           broadcastStatus();
         }
       } else if (data.LaunchGame) {
@@ -45,6 +45,9 @@ wss.on('connection', (ws, req) => {
         connections.forEach(({ ws }, key) => {
           ws.send(JSON.stringify({ Command: "LaunchGame", UeType, PlayerName, CharacterType }));
         });
+      } else if (data.type === 'stop') {
+        console.log(`Stop signal received from ${data.clientIP}`);
+        broadcastToFrontend({ type: 'stop', ip: data.clientIP });
       }
     } catch (error) {
       console.error(`Error processing message: ${message}`, error);
@@ -57,7 +60,15 @@ wss.on('connection', (ws, req) => {
     broadcastStatus();
   });
 });
-// 广播当前状态给所有客户端
+
+function broadcastToFrontend(message) {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(message));
+    }
+  });
+}
+
 function broadcastStatus() {
   const status = Array.from(connections.entries()).map(([ip, state]) => ({
     ip,
@@ -73,6 +84,29 @@ function broadcastStatus() {
   });
 }
 
+// Start Timeline Command Handler
+app.post('/start-timeline', (req, res) => {
+  const { mainServerIp } = req.body;
+
+  if (!mainServerIp || !connections.has(mainServerIp)) {
+    return res.status(400).json({ error: 'Invalid or unregistered mainServerIp' });
+  }
+
+  const connection = connections.get(mainServerIp);
+  if (connection && connection.ws && connection.ws.readyState === WebSocket.OPEN) {
+    const timelineCommand = {
+      command: 'startTimeline',
+    };
+    connection.ws.send(JSON.stringify(timelineCommand));
+    console.log(`Sent 'startTimeline' command to ${mainServerIp}`);
+    res.json({ message: 'startTimeline command sent to server' });
+  } else {
+    console.warn(`No open WebSocket connection for ${mainServerIp}`);
+    res.status(500).json({ error: `Cannot send to ${mainServerIp}: WebSocket not open` });
+  }
+});
+
+
 app.post('/launch-game', (req, res) => {
   const commands = req.body; // Array of commands from the UI
 
@@ -87,7 +121,7 @@ app.post('/launch-game', (req, res) => {
     if (connections.has(mainServerIp)) {
       // Send 'server' message to mainServerIp
       const mainServerConnection = connections.get(mainServerIp);
-      if (mainServerConnection.ws && mainServerConnection.ws.readyState === WebSocket.OPEN) {
+      if (mainServerConnection.ws && mainServerConnection.ws.readyState === WebSocket.OPEN && mainServerIp === clientIp) {
         const serverMessage = {
           type: 'server',
           playerName,
@@ -96,6 +130,8 @@ app.post('/launch-game', (req, res) => {
         mainServerConnection.ws.send(JSON.stringify({ LaunchGame: serverMessage }));
         console.log(`Sent 'server' message to ${mainServerIp}:`, serverMessage);
       }
+    } else {
+      console.warn(`Cannot send 'server' message to ${mainServerIp}: WebSocket not open`);
     }
 
     if (connections.has(clientIp)) {
@@ -110,29 +146,12 @@ app.post('/launch-game', (req, res) => {
         clientConnection.ws.send(JSON.stringify({ LaunchGame: clientMessage }));
         console.log(`Sent 'client' message to ${clientIp}:`, clientMessage);
       }
+    } else {
+      console.warn(`Cannot send 'client' message to ${clientIp}: WebSocket not open`);
     }
   });
 
   res.json({ message: 'LaunchGame commands sent to PCs' });
-});
-
-app.post('/start-timeline', (req, res) => {
-  const { mainServerIp } = req.body;
-
-  if (!mainServerIp || !connections.has(mainServerIp)) {
-    return res.status(400).json({ error: 'Invalid or unregistered mainServerIp' });
-  }
-
-  const connection = connections.get(mainServerIp);
-  if (connection && connection.ws && connection.ws.readyState === WebSocket.OPEN) {
-    const message = { type: 'start-timeline' };
-    connection.ws.send(JSON.stringify({ TimelineCommand: message }));
-    console.log(`Sent '启动剧情Timeline' command to ${mainServerIp}`);
-    res.json({ message: `'启动剧情Timeline' command sent to ${mainServerIp}` });
-  } else {
-    console.warn(`Cannot send command to ${mainServerIp}: WebSocket not open`);
-    res.status(500).json({ error: `Cannot send command to ${mainServerIp}` });
-  }
 });
 
 server.listen(port, () => {

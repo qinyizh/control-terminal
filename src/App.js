@@ -1,12 +1,13 @@
 import React from 'react';
 import DataSourceConfig from './components/DataSourceConfig';
 
-function App() {
+const App = () => {
+
   return (
-    <div>
+    <div className="App">
       <DataSourceConfig />
     </div>
   );
-}
+};
 
-export default App; 
+export default App;
