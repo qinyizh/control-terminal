@@ -6,11 +6,10 @@ require('dotenv').config();
 const app = express();
 const server = require('http').createServer(app);
 const wss = new WebSocket.Server({ server });
-
 const port = process.env.PORT || 8080;
 
-const connections = new Map(); // 存储PC的状态 {PC_IP: {isServer: 1, isClient: 0}}
-// Use CORS middleware
+const connections = new Map(); 
+const locations = new Map(); // { ip: { locationData } }
 app.use(cors());
 app.use(express.json());
 
@@ -48,6 +47,12 @@ wss.on('connection', (ws, req) => {
       } else if (data.type === 'stop') {
         console.log(`Stop signal received from ${data.clientIP}`);
         broadcastToFrontend({ type: 'stop', ip: data.clientIP });
+      } else if (data.type === 'location') {
+        console.log(`Received location data from ${ip}:`, data.location);
+        locations.set(ip, data.location);
+
+        // Broadcast updated locations to all servers except the sender
+        broadcastLocations(ip);
       }
     } catch (error) {
       console.error(`Error processing message: ${message}`, error);
@@ -57,9 +62,22 @@ wss.on('connection', (ws, req) => {
   ws.on('close', () => {
     console.log(`Connection closed: ${ip}`);
     connections.delete(ip);
-    broadcastStatus();
+    locations.delete(ip);
   });
 });
+// Broadcast locations to all servers except the sender
+function broadcastLocations(senderIp) {
+  const allLocations = Array.from(locations.entries()).map(([ip, location]) => ({ ip, location }));
+
+  connections.forEach((connection, ip) => {
+    if (connection.type === 'server' && ip !== senderIp) {
+      if (connection.ws.readyState === WebSocket.OPEN) {
+        connection.ws.send(JSON.stringify({ type: 'locations', locations: allLocations }));
+        console.log(`Broadcasted locations to ${ip}`);
+      }
+    }
+  });
+}
 
 function broadcastToFrontend(message) {
   wss.clients.forEach((client) => {
@@ -121,6 +139,7 @@ app.post('/launch-game', (req, res) => {
     if (connections.has(mainServerIp)) {
       // Send 'server' message to mainServerIp
       const mainServerConnection = connections.get(mainServerIp);
+      mainServerConnection.type = 'server';
       if (mainServerConnection.ws && mainServerConnection.ws.readyState === WebSocket.OPEN && mainServerIp === clientIp) {
         const serverMessage = {
           type: 'server',
@@ -137,6 +156,7 @@ app.post('/launch-game', (req, res) => {
     if (connections.has(clientIp)) {
       // Send 'client' message to clientIp
       const clientConnection = connections.get(clientIp);
+      clientConnection.type = 'client';
       if (clientConnection.ws && clientConnection.ws.readyState === WebSocket.OPEN) {
         const clientMessage = {
           type: 'client',

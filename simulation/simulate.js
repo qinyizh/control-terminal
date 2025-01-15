@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const { exec } = require('child_process');
 
 const serverUrl = 'ws://192.168.1.154:8080'; // 中控服务地址
-const totalClients = 5; // 模拟客户端数量（实际可扩展到50）
+const totalClients = 8; // 模拟客户端数量（实际可扩展到50）
 const clients = [];
 
 // 动态创建模拟客户端
@@ -13,6 +13,7 @@ for (let i = 1; i <= totalClients; i++) {
   ws.on('open', () => {
     console.log(`Client ${clientIP} connected`);
     registerClient(ws, clientIP);
+    sendLocationData(ws, clientIP);
   });
 
   ws.on('close', () => {
@@ -92,4 +93,35 @@ function sendTerminateSignal(ws, clientIP) {
   };
   ws.send(JSON.stringify(stopMessage));
   console.log(`Client ${clientIP} sent terminate signal`);
+}
+// Send location data periodically
+function sendLocationData(ws, serverIp) {
+  setInterval(() => {
+    const locationData = {
+      "transforms": [
+        {
+          "l": [28.812731, 4.087652, 0.0],
+          "r": [55.925688, 21.269879, -106.349658],
+          "s": [1.0, 1.0, 1.0]
+        },
+        {
+          "l": [10.123456, 5.654321, 2.0],
+          "r": [30.0, 45.0, 90.0],
+          "s": [2.0, 2.0, 2.0]
+        },
+        {
+          "l": [15.0, 3.5, 7.2],
+          "r": [0.0, 180.0, 45.0],
+          "s": [0.5, 0.5, 0.5]
+        },
+        {
+          "l": [9.876543, 2.345678, 1.0],
+          "r": [90.0, 0.0, 270.0],
+          "s": [1.5, 1.5, 1.5]
+        }
+      ]
+    };
+    ws.send(JSON.stringify({ location: locationData }));
+    console.log(`Server ${serverIp} sent location:`, locationData);
+  }, 5000);
 }

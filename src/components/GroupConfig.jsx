@@ -5,8 +5,10 @@ import {
   DeleteOutlined, 
   CloudServerOutlined,
   DatabaseOutlined,
-  LaptopOutlined
+  LaptopOutlined,
+  PlayCircleOutlined
 } from '@ant-design/icons';
+import characterMapping from './characterMapping';
 const { Option } = Select;
 const { Panel } = Collapse;
 
@@ -17,12 +19,12 @@ const GroupConfig = ({
   onDelete,
   timeElapsed, 
   isRunning,
-  ipMap
+  ipMap,
+  onStartClient,
+  onStartTimeline
 }) => {
-
   // 根据 ipMap 生成 PC 选项列表
   const ALL_PC_OPTIONS = Object.keys(ipMap || {});
-
 
   // 修改初始状态为全部展开
   const [activeKeys, setActiveKeys] = useState(() => {
@@ -51,7 +53,6 @@ const GroupConfig = ({
   const getAvailableOptions = (currentIndex) => {
     const selectedPCs = getSelectedPCs(currentIndex);
     const options = ALL_PC_OPTIONS.filter(pc => !selectedPCs.includes(pc));
-    console.log(`Available options for index ${currentIndex}:`, options);
     return options;
   };
 
@@ -102,7 +103,8 @@ const GroupConfig = ({
     onUpdate({
       ...group,
       selections: newSelections,
-      configs: newConfigs
+      configs: newConfigs,
+      serverIp: mainServerIP.ip
     }, {
       mainServerIp: isFirstSelectedPC ? ipMap[value] : undefined,
       updateCurrentGroup: isFirstSelectedPC,
@@ -137,7 +139,8 @@ const GroupConfig = ({
     onUpdate({
       ...group,
       selections: newSelections,
-      configs: newConfigs
+      configs: newConfigs,
+      serverIp: ''
     });
   };
 
@@ -225,8 +228,8 @@ const GroupConfig = ({
         <div className="player-name-container">
           <Input
             className="player-name-input"
-            value={group.configs[`config${index}`]?.name || ''}
-            onChange={e => handleConfigChange(index, 'name', e.target.value)}
+            value={group.configs[`config${index}`]?.playerName || ''}
+            onChange={e => handleConfigChange(index, 'playerName', e.target.value)}
             placeholder="玩家"
           />
           <CloudServerOutlined 
@@ -269,9 +272,11 @@ const GroupConfig = ({
                     value={group.configs[`config${index}`]?.characterType}
                     onChange={value => handleConfigChange(index, 'characterType', value)}
                   >
-                    <Option value={1}>1</Option>
-                    <Option value={2}>2</Option>
-                    <Option value={3}>3</Option>
+                    {Object.entries(characterMapping).map(([key, label]) => (
+                      <Option key={key} value={parseInt(key, 10)}>
+                        {label}
+                      </Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </Form>
@@ -313,7 +318,7 @@ const GroupConfig = ({
   };
 
   return (
-    <div className="group-config">
+    <div className={`group-config ${isRunning.isRunning ? 'disabled' : ''}`}>
       <div className="group-header">
         <div className="group-title-container">
           <div className="group-title">运行组{groupIndex + 1}</div>
@@ -330,7 +335,7 @@ const GroupConfig = ({
         {group.selections.map((selection, index) => (
           <div key={index} className="selection-column">
             {renderConfigSection(index)}
-            {isRunning && (
+            {isRunning.isRunning && (
               <div className="timer-overlay">
                 <div className="timer">
                   {timeElapsed[index] ? 
@@ -354,6 +359,29 @@ const GroupConfig = ({
           </div>
         ))}
       </div>
+
+      <div className="group-buttons">
+        <Button
+          type="primary"
+          icon={<PlayCircleOutlined />}
+          onClick={() => onStartClient(group)}
+          className="start-client-btn"
+          disabled={isRunning.isRunning}
+        >
+          启动客户端
+        </Button>
+        <Button
+          type="primary"
+          icon={<PlayCircleOutlined />}
+          onClick={() => onStartTimeline(group)}
+          className="start-timeline-btn"
+          disabled={isRunning.isRunning}
+        >
+          启动剧情Timeline
+        </Button>
+      </div>
+
+      {isRunning.isRunning && <div className="group-mask" />}
 
       <Modal
         title="确认删除"

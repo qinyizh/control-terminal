@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, message } from 'antd';
-import { PlusOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import GroupConfig from './GroupConfig';
 import { initWebSocket, addMessageListener } from '../websocket';
 
@@ -8,9 +8,8 @@ const WEBSOCKET_URL = 'ws://192.168.1.154:8080';
 
 const DataSourceConfig = () => {
   const [groups, setGroups] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [timers, setTimers] = useState({});  // 存储每个组的计时器
-  const [timeElapsed, setTimeElapsed] = useState({}); // { groupId: { deviceIndex: time } }
+  const timerMap = useRef(new Map()); // Use Map to store timer data
+  const [timeElapsed, setTimeElapsed] = useState({}); // { serverIp: { deviceIndex: time } }
   const [ipMap, setIpMap] = useState({});
 
   useEffect(() => {
@@ -25,78 +24,75 @@ const DataSourceConfig = () => {
         setIpMap(idMap);
       } else if (data.type === 'stop') {
         console.log(`Stop signal received from ${data.ip}`);
-        setTimers({});
-        setTimeElapsed({});
-        setIsRunning(false);
+
+        const serverIp = data.ip;
+        stopTimer(serverIp); 
       }
     });
   }, []);
 
   // 启动计时器
-  const startTimer = (groupId) => {
+  const startTimer = (serverIp) => {
+
     const startTime = Date.now();
     const timer = setInterval(() => {
       setTimeElapsed(prev => ({
         ...prev,
-        [groupId]: {
+        [serverIp]: {
           0: (Date.now() - startTime) / 1000,
           1: (Date.now() - startTime) / 1000,
           2: (Date.now() - startTime) / 1000
         }
       }));
     }, 100);
-
-    setTimers(prev => ({
-      ...prev,
-      [groupId]: timer
-    }));
+    timerMap.current.set(serverIp, { timer, isRunning: true });
   };
-
   // 停止计时器
-  const stopTimer = (groupId) => {
-    if (timers[groupId]) {
-      clearInterval(timers[groupId]);
-      setTimers(prev => {
-        const newTimers = { ...prev };
-        delete newTimers[groupId];
-        return newTimers;
-      });
-      // 清零该组的计时器
+  const stopTimer = (serverIp) => {
+
+    if (timerMap.current.has(serverIp)) {
+      const timerData = timerMap.current.get(serverIp);
+      clearInterval(timerData.timer); // Clear the interval
+      timerMap.current.set(serverIp, { ...timerData, isRunning: false }); // Update signal state
       setTimeElapsed(prev => ({
         ...prev,
-        [groupId]: {
+        [serverIp]: {
           0: 0,
           1: 0,
           2: 0
         }
       }));
+      console.log(`Timer with ID ${serverIp} stopped`);
+    } else {
+      console.log(`No timer found with ID ${serverIp}`);
     }
   };
 
   const handleAddGroup = () => {
     const newGroup = {
       id: Date.now(),
+      serverIp: '',
       selections: [undefined, undefined, undefined],
       configs: {
         config0: {
-          name: '',
+          playerName: '',
           groupServerIp: '',
-          localIp: '',
-          roleType: undefined,
+          clientIp: '',
+          characterType: undefined,
           isMainServer: false
         },
         config1: {
-          name: '',
+          playerName: '',
           groupServerIp: '',
-          localIp: '',
-          roleType: undefined,
+          clientIp: '',
+          characterType: undefined,
           isMainServer: false
         },
         config2: {
-          name: '',
+          playerName: '',
           groupServerIp: '',
-          localIp: '',
-          roleType: undefined,
+          clientIp: '',
+          characterType: undefined,
           isMainServer: false
         }
       }
@@ -110,35 +106,6 @@ const DataSourceConfig = () => {
     newGroups.splice(index, 1);
     setGroups(newGroups);
   };
-
-  // 检查 Timeline 状态
-  // const checkTimelineStatus = async () => {
-  //   try {
-  //     const response = await fetch('http://192.168.1.154:8080/timeline-status');
-  //     const data = await response.json();
-      
-  //     if (data.status === 'completed') {
-  //       // Timeline 结束
-  //       setIsRunning(false);
-  //       // 停止所有计时器并清零
-  //       Object.keys(timers).forEach(stopTimer);
-  //       message.success('Timeline执行完成');
-  //     } else if (data.status === 'running') {
-  //       // 继续检查
-  //       setTimeout(checkTimelineStatus, 1000);
-  //     }
-  //   } catch (error) {
-  //     console.error('检查状态失败:', error);
-  //     setTimeout(checkTimelineStatus, 1000);
-  //   }
-  // };
-
-  // 在组件卸载时清理计时器
-  useEffect(() => {
-    return () => {
-      Object.keys(timers).forEach(stopTimer);
-    };
-  }, []);
 
   const handleGroupUpdate = (index, updatedGroup, options = {}) => {
     const newGroups = [...groups];
@@ -157,19 +124,20 @@ const DataSourceConfig = () => {
             };
           }
         });
+        currentGroup.serverIp = options.mainServerIp.ip;
       }
     }
 
     setGroups(newGroups);
   };
 
-  const handleLaunchGame = () => {
+  const handleLaunchGame = (group) => {
     const params = []
-    Object.values(groups[0]['configs']).forEach((config, index) => {
+    Object.values(group['configs']).forEach((config, index) => {
       params.push({
         characterType: config.characterType,
         mainServerIp: config.groupServerIp.ip,
-        playerName: config.name,
+        playerName: config.playerName,
         clientIp: config.clientIp.ip
       })
     })
@@ -183,30 +151,28 @@ const DataSourceConfig = () => {
       .catch((error) => console.error('Error launching game:', error));
   };
 
-  const handleStartTimeline = () => {
+  const handleStartTimeline = (group) => {
+    console.log('group', group);
     fetch('http://192.168.1.154:8080/start-timeline', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mainServerIp: groups[0]['configs']['config0'].groupServerIp.ip }),
+      body: JSON.stringify({ mainServerIp: group.serverIp }),
     })
       .then((response) => {
         response.json(); 
-        groups.forEach(group => startTimer(group.id));
+        startTimer(group.serverIp);
         message.success('剧情Timeline启动成功');
-        setIsRunning(true);
        // checkTimelineStatus(); 
       })
       .then((data) => console.log('Timeline Command Response:', data))
       .catch((error) => {
         message.error('无法连接到服务器');
         console.error('Error:', error);
-        // 停止所有计时器并清零
-        Object.keys(timers).forEach(stopTimer);
       });
   };
 
   return (
-    <div className={`data-source-config ${isRunning ? 'disabled' : ''}`}>
+    <div className="data-source-config">
       <div className="config-content">
         {groups.length === 0 ? (
           <div className="empty-state">
@@ -227,9 +193,11 @@ const DataSourceConfig = () => {
                 groupIndex={index}
                 onUpdate={(updatedGroup, options) => handleGroupUpdate(index, updatedGroup, options)}
                 onDelete={handleDeleteGroup}
-                timeElapsed={timeElapsed[group.id] || {}}
-                isRunning={isRunning}
+                timeElapsed={timeElapsed[group.serverIp] || {}}
+                isRunning={timerMap.current.get(group.serverIp) || {}}
                 ipMap={ipMap}
+                onStartClient={handleLaunchGame}
+                onStartTimeline={handleStartTimeline}
               />
             ))}
             <Button 
@@ -243,29 +211,6 @@ const DataSourceConfig = () => {
           </div>
         )}
       </div>
-
-      <div className="bottom-buttons">
-        <Button
-          type="primary"
-          icon={<PlayCircleOutlined />}
-          onClick={handleLaunchGame}
-          className="start-client-btn"
-          disabled={isRunning}
-        >
-          启动客户端
-        </Button>
-        <Button
-          type="primary"
-          icon={<PlayCircleOutlined />}
-          onClick={handleStartTimeline}
-          className="start-timeline-btn"
-          disabled={isRunning}
-        >
-          启动剧情Timeline
-        </Button>
-      </div>
-
-      {isRunning && <div className="page-mask" />}
     </div>
   );
 };
