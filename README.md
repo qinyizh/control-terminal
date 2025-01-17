@@ -107,6 +107,11 @@ node simulate.js
 cd react-client
 npm run dev
 ```
+#### **3. 启动engine**
+```bash
+cd engine
+npm run start:server & npm run start:client
+```
 
 打开浏览器访问 `http://localhost:3000`。
 
