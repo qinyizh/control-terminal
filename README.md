@@ -71,6 +71,7 @@ control-terminal/
 ```bash
 git clone https://github.com/qinyizh/control-terminal.git
 cd control-terminal
+git checkout master
 ```
 
 ### **2. 安装依赖**
