@@ -1,0 +1,17 @@
+{
+    "name": "engine-service",
+    "version": "1.0.0",
+    "description": "Engine server and client WebSocket services for PC communication",
+    "main": "engine-server.js",
+    "scripts": {
+      "start:server": "node engine-server.js",
+      "start:client": "node engine-client.js",
+      "start:all": "npm run start:server & npm run start:client"
+    },
+    "dependencies": {
+      "ws": "^8.13.0"
+    },
+    "author": "Your Name",
+    "license": "MIT"
+  }
+  

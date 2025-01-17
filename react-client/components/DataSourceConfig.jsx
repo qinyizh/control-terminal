@@ -4,7 +4,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import GroupConfig from './GroupConfig';
 import { initWebSocket, addMessageListener } from '../websocket';
 
-const WEBSOCKET_URL = 'ws://192.168.1.154:8080';
+import { padId, WEBSOCKET_URL } from './config';
 
 const DataSourceConfig = () => {
   const [groups, setGroups] = useState([]);
@@ -14,27 +14,41 @@ const DataSourceConfig = () => {
 
   useEffect(() => {
     initWebSocket(WEBSOCKET_URL);
-
+    
     addMessageListener((data) => {
-      if (data.type === 'StatusUpdate') {
+      if (data.type === 'LoadState') {
+        Object.keys(data.state.padStatus).forEach((item) => {
+          if(Number(item) === padId){
+            const newGroups = [];
+            data.state.padStatus[item].forEach((item) => {
+              newGroups.push(item.uiData);
+              if(item.isRunning){
+                startTimer(item.uiData.serverIp, item.startTime);
+              }
+            });
+            setGroups(newGroups);
+          }
+        });
+        
+      } else if (data.type === 'TimelineEnd') {
+        console.log(`Stop signal received from ${data.clientIP}`);
+
+        const serverIp = data.clientIP;
+        stopTimer(serverIp); 
+      } else if (data.type === 'PCStatusUpdate') {
         const idMap = {};
-        data.status.forEach((item) => {
-          idMap[item.ip] = item;
+        Object.entries(data.status).forEach(([clientIP, item]) => {
+          idMap[clientIP] = {...idMap[clientIP], ...item};
         });
         setIpMap(idMap);
-      } else if (data.type === 'stop') {
-        console.log(`Stop signal received from ${data.ip}`);
-
-        const serverIp = data.ip;
-        stopTimer(serverIp); 
       }
     });
   }, []);
 
   // 启动计时器
-  const startTimer = (serverIp) => {
+  const startTimer = (serverIp, originalStartTime) => {
 
-    const startTime = Date.now();
+    const startTime = originalStartTime || Date.now();
     const timer = setInterval(() => {
       setTimeElapsed(prev => ({
         ...prev,
@@ -70,7 +84,7 @@ const DataSourceConfig = () => {
 
   const handleAddGroup = () => {
     const newGroup = {
-      id: Date.now(),
+      groupId: Date.now(),
       serverIp: '',
       selections: [undefined, undefined, undefined],
       configs: {
@@ -124,7 +138,7 @@ const DataSourceConfig = () => {
             };
           }
         });
-        currentGroup.serverIp = options.mainServerIp.ip;
+        currentGroup.serverIp = options.mainServerIp.clientIP;
       }
     }
 
@@ -132,22 +146,17 @@ const DataSourceConfig = () => {
   };
 
   const handleLaunchGame = (group) => {
-    const params = []
-    Object.values(group['configs']).forEach((config, index) => {
-      params.push({
-        characterType: config.characterType,
-        mainServerIp: config.groupServerIp.ip,
-        playerName: config.playerName,
-        clientIp: config.clientIp.ip
-      })
-    })
+    
+    const params = {
+      [padId]: {...group}
+    };
+
     fetch('http://192.168.1.154:8080/launch-game', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     })
       .then((response) => response.json())
-      .then((data) => console.log('LaunchGame Response:', data))
       .catch((error) => console.error('Error launching game:', error));
   };
 
@@ -156,15 +165,13 @@ const DataSourceConfig = () => {
     fetch('http://192.168.1.154:8080/start-timeline', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mainServerIp: group.serverIp }),
+      body: JSON.stringify({ mainServerIp: group.serverIp, groupId: group.groupId, padId: padId }),
     })
       .then((response) => {
         response.json(); 
         startTimer(group.serverIp);
         message.success('剧情Timeline启动成功');
-       // checkTimelineStatus(); 
       })
-      .then((data) => console.log('Timeline Command Response:', data))
       .catch((error) => {
         message.error('无法连接到服务器');
         console.error('Error:', error);
@@ -188,7 +195,7 @@ const DataSourceConfig = () => {
           <div>
             {groups.map((group, index) => (
               <GroupConfig 
-                key={group.id} 
+                key={group.groupId} 
                 group={group}
                 groupIndex={index}
                 onUpdate={(updatedGroup, options) => handleGroupUpdate(index, updatedGroup, options)}

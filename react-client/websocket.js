@@ -28,3 +28,11 @@ export const initWebSocket = (url) => {
 export const addMessageListener = (listener) => {
   listeners.push(listener);
 };
+// 向服务器发送消息
+export const sendMessage = (message) => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(message));
+  } else {
+    console.warn('WebSocket is not open, cannot send message.');
+  }
+};

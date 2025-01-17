@@ -1,5 +1,5 @@
 {
-    "name": "pc00-control-service",
+    "name": "control-service",
     "version": "1.0.0",
     "description": "WebSocket-based control service for managing game processes",
     "main": "index.js",
@@ -12,6 +12,6 @@
         "express": "^4.21.2",
         "ws": "^8.18.0"
     },
-    "author": "Your Name",
+    "author": "Qinyi Zhang",
     "license": "MIT"
 }

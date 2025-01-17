@@ -8,7 +8,7 @@ import {
   LaptopOutlined,
   PlayCircleOutlined
 } from '@ant-design/icons';
-import characterMapping from './characterMapping';
+import { characterMapping } from './config';
 const { Option } = Select;
 const { Panel } = Collapse;
 
@@ -104,7 +104,7 @@ const GroupConfig = ({
       ...group,
       selections: newSelections,
       configs: newConfigs,
-      serverIp: mainServerIP.ip
+      serverIp: mainServerIP.clientIP
     }, {
       mainServerIp: isFirstSelectedPC ? ipMap[value] : undefined,
       updateCurrentGroup: isFirstSelectedPC,
@@ -151,8 +151,8 @@ const GroupConfig = ({
       <div className="pc-status">
         <span className="pc-name">{pc}状态</span>
           <span className="d-flex">
-            {ipMap[pc].isServer === 1 ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
-            {ipMap[pc].isClient === 1 ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
+            {(ipMap[pc].serverConnected && ipMap[pc].serverInGame) ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
+            {(ipMap[pc].clientConnected && ipMap[pc].clientInGame) ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
           </span>
       </div>
     );
@@ -165,8 +165,8 @@ const GroupConfig = ({
         <Option key={pc} value={pc}>
           <div className="pc-option">
             <span className="d-flex">
-              {ipMap[pc].isServer === 1 ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
-              {ipMap[pc].isClient === 1 ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
+              {(ipMap[pc].serverConnected && ipMap[pc].serverInGame) ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
+              {(ipMap[pc].clientConnected && ipMap[pc].clientInGame) ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
             </span>
             {pc}
           </div>
@@ -175,11 +175,11 @@ const GroupConfig = ({
     }
     
     return (
-      <Option key={pc} value={pc} disabled={ipMap[pc].isServer === 1 || ipMap[pc].isClient === 1}>
+      <Option key={pc} value={pc} disabled={ipMap[pc].serverInGame || ipMap[pc].clientInGame}>
         <div className="pc-option">
           <span className="d-flex">
-            {ipMap[pc].isServer === 1 ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
-            {ipMap[pc].isClient === 1 ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
+            {(ipMap[pc].serverConnected && ipMap[pc].serverInGame) ? <DatabaseOutlined className="status-icon success"  /> : <DatabaseOutlined className="status-icon error"  />}
+            {(ipMap[pc].clientConnected && ipMap[pc].clientInGame) ? <LaptopOutlined className="status-icon success"  /> : <LaptopOutlined className="status-icon error"  />}
           </span>
           {pc}
         </div>
@@ -255,14 +255,14 @@ const GroupConfig = ({
               <Form layout="horizontal" className="config-form">
                 <Form.Item label="服务器IP地址">
                   <Input
-                    value={group.configs[`config${index}`]?.groupServerIp.ip || ''}
+                    value={group.configs[`config${index}`]?.groupServerIp.clientIP || ''}
                     onChange={e => handleConfigChange(index, 'groupServerIp', e.target.value)}
                     disabled
                   />
                 </Form.Item>
                 <Form.Item label="本机IP地址">
                   <Input
-                    value={group.configs[`config${index}`]?.clientIp.ip || ''}
+                    value={group.configs[`config${index}`]?.clientIp.clientIP || ''}
                     onChange={e => handleConfigChange(index, 'clientIp', e.target.value)}
                     disabled
                   />
