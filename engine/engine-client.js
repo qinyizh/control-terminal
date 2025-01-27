@@ -19,11 +19,6 @@ wss.on('connection', (ws, req) => {
       console.log('Launching game client...');
       clientInGame = true; // 更新游戏状态
       ws.send(JSON.stringify({ type: 'GameStatus', clientInGame: clientInGame }));
-
-    } else if (data.type === 'StopGame') {
-      console.log(`StopGame received for PC ${pcID}`);
-      clientInGame = false; // 停止游戏
-      ws.send(JSON.stringify({ type: 'GameStatus', clientInGame: clientInGame }));
     }
   });
 

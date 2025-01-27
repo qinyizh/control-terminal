@@ -1,17 +1,24 @@
 {
-    "name": "control-service",
+    "name": "pc-central",
     "version": "1.0.0",
-    "description": "WebSocket-based control service for managing game processes",
-    "main": "index.js",
+    "main": "backend/index.js",
+    "bin": {
+      "pc-central": "./backend/index.js"
+    },
     "scripts": {
-        "start": "node index.js"
+      "start": "node backend/index.js",
+      "build:frontend": "cd frontend && npm run build"
+    },
+    "pkg": {
+      "assets": [
+        "./frontend/build/**/*",
+        "./backend/state.json"
+      ]
     },
     "dependencies": {
-        "cors": "^2.8.5",
-        "dotenv": "^16.0.3",
-        "express": "^4.21.2",
-        "ws": "^8.18.0"
+      "express": "^4.18.2",
+      "ws": "^8.12.0"
     },
-    "author": "Qinyi Zhang",
-    "license": "MIT"
-}
+    "devDependencies": {}
+  }
+  

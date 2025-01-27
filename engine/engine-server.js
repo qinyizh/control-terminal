@@ -44,8 +44,8 @@ wss.on('connection', (ws, req) => {
         serverInGame = false; // 停止游戏
         ws.send(JSON.stringify({ type: 'GameStatus', serverInGame: serverInGame }));
       }, 20000); 
-    } else if (data.type === 'positionUpdate') {
-      console.log('Received positionUpdate from PC:', data.positions);
+    } else if (data.type === 'LocationBroadcastFromCentralPC') {
+      console.log('LocationBroadcastFromCentralPC from PC:', data.data.positions);
       // 在此处理 position 数据
     }
   });

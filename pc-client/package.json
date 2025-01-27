@@ -1,0 +1,17 @@
+{
+  "name": "pc-client",
+  "version": "1.0.0",
+  "main": "client.js",
+  "scripts": {
+    "start": "node client.js"
+  },
+  "bin": {
+    "pc-client": "./client.js"
+  },
+  "pkg": {
+    "assets": []
+  },
+  "dependencies": {
+    "ws": "^8.12.0"
+  }
+}
