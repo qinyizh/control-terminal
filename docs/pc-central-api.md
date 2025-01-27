@@ -26,6 +26,7 @@
 | `LaunchGame`             | Server → Client | 中控通知客户端启动游戏                      |
 | `StartTimeline`          | Server → Client | 中控通知客户端开始时间线                    |
 
+
 ---
 
 ## WebSocket 消息说明
@@ -43,3 +44,131 @@
     "clientIP": "192.168.1.101"
   }
 
+#### **2. UpdateStatus**
+- **描述**: 客户端定期发送自身的状态更新。
+- **消息格式**:
+  ```json
+  {
+    "type": "UpdateStatus",
+    "pcID": "PC1",
+    "clientIP": "192.168.1.101",
+    "serverConnected": true,
+    "clientConnected": false
+  }
+  ```
+---
+
+#### **3. TimelineEnd**
+- **描述**: 客户端发送时间线结束信号。
+- **消息格式**:
+  ```json
+  {
+    "type": "TimelineEnd",
+    "clientIP": "192.168.1.101"
+  }
+  ```
+---
+
+#### **4. LocationUpdate**
+- **描述**: 客户端发送自身位置信息。
+- **消息格式**:
+  ```json
+  {
+    "type": "LocationUpdate",
+    "clientIP": "192.168.1.101",
+    "position": {
+      "transforms": [
+        {
+          "l": [28.81, 4.08, 0.0],
+          "r": [55.92, 21.26, -106.34],
+          "s": [1.0, 1.0, 1.0]
+        }
+      ]
+    }
+  }
+  ```
+
+
+### 中控 → 客户端消息
+
+#### **1. LaunchGame**
+- **描述**: 中控向客户端发送启动游戏指令。
+- **消息格式**:
+  ```json
+  {
+    "type": "LaunchGame",
+    "connectionType": "server",
+    "MsPlayerName": "Player1",
+    "MsCharacterIndex": 2,
+    "padId": "0.123",
+    "groupId": "1001"
+  }
+  ```
+---
+
+#### **2. StartTimeline**
+- **描述**: 中控通知客户端开始时间线。
+- **消息格式**:
+  ```json
+  {
+    "type": "StartTimeline"
+  }
+  ```
+---
+#### **3. LocationBroadcastFromCentralPC**
+- **描述**: 中控广播所有位置信息。
+- **消息格式**:
+  ```json
+  {
+    "type": "LocationBroadcastFromCentralPC",
+    "positions": {
+      '192.168.1.102': { transforms: [ [Object], [Object] ] },
+      '192.168.1.105': { transforms: [ [Object], [Object] ] }
+    }
+  }
+  ```
+---
+
+### HTTP API
+
+#### **1. POST `/launch-game`**
+- **描述**: 向多个客户端发送启动游戏指令。
+- **请求格式**:
+  ```json
+  {
+    "0.123": {
+      "groupId": 1001,
+      "serverIp": "192.168.1.101",
+      "configs": {
+        "config0": {
+          "MsPlayerName": "Player1",
+          "MsCharacterIndex": 2,
+          "clientIp": "192.168.1.102"
+        }
+      }
+    }
+  }
+  ```
+- **响应**:
+  ```json
+  { "message": "LaunchGame commands sent to PCs" }
+  ```
+
+---
+
+#### **2. POST `/start-timeline`**
+- **描述**: 启动时间线。
+- **请求格式**:
+  ```json
+  {
+    "mainServerIp": "192.168.1.101",
+    "padId": "0.123",
+    "groupId": 1001
+  }
+  ```
+- **响应**:
+  ```json
+  { "message": "startTimeline command sent to server" }
+  ```
+
+---
